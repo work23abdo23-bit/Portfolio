@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+
+<link rel="stylesheet" a href="css/style.css">
+
+   </head>
+<body>
+  <header class="header">
+    <img class="logo" src="images/Majestic_Hotel_hd.png" alt="Majestic Hotel">
+    <nav class="nav" >
+   <div>
+        <ul>
+            <li class="list"><a href="start.html">Home</a></li>
+            <li class="list"><a href="explore.html">Explore </a></li>
+            <li class="list"><a href="rooms.html">Rooms</a></li>
+            <li class="list"><a href="bb.html">Booking</a></li>
+            <li class="list"><a href="contact.html">Contact</a></li>
+            <li class="list"><a href="signup.html">signup</a></li>
+        </ul>    
+        </div>
+    </nav>
+</header>
+
+
+  <div class=" ">
+    <div class="title">Sign Up</div>
+    <div class="content">
+      <form action="connect.php" method="post">
+        <div class="user-details">
+          <div class="input-box">
+            <span class="details">Full Name</span>
+            <input type="text"   name="firstname"    placeholder="Enter your firstname" required>
+          </div>
+          <div class="input-box">
+            <span class="details">Username</span>
+            <input type="text" name="lastname" placeholder="Enter your lastname" required>
+          </div>
+          <div class="input-box">
+            <span class="details">Email</span>
+            <input type="text"  name="email"  placeholder="Enter your email" required>
+          </div>
+          <div class="input-box">
+            <span class="details">Phone Number</span>
+            <input type="text"   name="number" placeholder="Enter your number" required>
+          </div>
+          <div class="input-box">
+            <span class="details">Password</span>
+            <input type="password" name="password" placeholder="Enter your password" required>
+          </div>
+          <div class="input-box">
+            <span class="details">Confirm Password</span>
+            <input type="password"  placeholder="Confirm your password" required>
+          </div>
+        </div>
+        <div class="gender-details">
+          <input type="radio" name="gender" id="dot-1">
+          <input type="radio" name="gender" id="dot-2">
+          <input type="radio" name="gender" id="dot-3">
+          <span class="gender-title">Gender</span>
+          <div class="category">
+            <label for="dot-1">
+            <span class="dot one"></span>
+            <span class="gender">Male</span>
+          </label>
+          <label for="dot-2">
+            <span class="dot two"></span>
+            <span class="gender">Female</span>
+          </label>
+          
+          </div>
+        </div>
+        <div class="button">
+          <input type="submit" value="Submit">
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
