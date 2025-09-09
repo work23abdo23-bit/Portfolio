@@ -1,0 +1,314 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Roles Enum
+enum UserRole {
+  CUSTOMER
+  RESTAURANT_OWNER
+  DELIVERY_DRIVER
+  ADMIN
+}
+
+// Order Status Enum
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+// Payment Status Enum
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Payment Method Enum
+enum PaymentMethod {
+  CASH
+  CARD
+  WALLET
+}
+
+// Users Table
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  phone       String?  @unique
+  password    String
+  firstName   String
+  lastName    String
+  avatar      String?
+  role        UserRole @default(CUSTOMER)
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  addresses       Address[]
+  orders          Order[]
+  reviews         Review[]
+  restaurants     Restaurant[]
+  deliveryOrders  Order[]      @relation("DeliveryDriver")
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+// Addresses Table
+model Address {
+  id          String  @id @default(cuid())
+  userId      String
+  title       String  // Home, Work, etc.
+  address     String
+  city        String  @default("أسوان")
+  governorate String  @default("أسوان")
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// Restaurants Table
+model Restaurant {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String
+  nameAr          String   // Arabic name
+  description     String?
+  descriptionAr   String?  // Arabic description
+  image           String?
+  coverImage      String?
+  address         String
+  latitude        Float
+  longitude       Float
+  phone           String
+  email           String?
+  isActive        Boolean  @default(true)
+  isOpen          Boolean  @default(true)
+  deliveryTime    Int      @default(30) // in minutes
+  deliveryFee     Float    @default(0)
+  minimumOrder    Float    @default(0)
+  rating          Float    @default(0)
+  totalReviews    Int      @default(0)
+  openingTime     String   @default("09:00")
+  closingTime     String   @default("23:00")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  owner      User         @relation(fields: [ownerId], references: [id])
+  categories Category[]
+  menuItems  MenuItem[]
+  orders     Order[]
+  reviews    Review[]
+
+  @@map("restaurants")
+}
+
+// Categories Table
+model Category {
+  id           String @id @default(cuid())
+  restaurantId String
+  name         String
+  nameAr       String // Arabic name
+  description  String?
+  image        String?
+  sortOrder    Int    @default(0)
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItems  MenuItem[]
+
+  @@map("categories")
+}
+
+// Menu Items Table
+model MenuItem {
+  id           String  @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  name         String
+  nameAr       String  // Arabic name
+  description  String?
+  descriptionAr String? // Arabic description
+  image        String?
+  price        Float
+  discountPrice Float?
+  isAvailable  Boolean @default(true)
+  isPopular    Boolean @default(false)
+  ingredients  String? // JSON string of ingredients
+  allergens    String? // JSON string of allergens
+  calories     Int?
+  preparationTime Int @default(15) // in minutes
+  sortOrder    Int     @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  @@map("menu_items")
+}
+
+// Orders Table
+model Order {
+  id                String        @id @default(cuid())
+  customerId        String
+  restaurantId      String
+  driverId          String?
+  addressId         String
+  orderNumber       String        @unique
+  status            OrderStatus   @default(PENDING)
+  subtotal          Float
+  deliveryFee       Float
+  tax               Float         @default(0)
+  discount          Float         @default(0)
+  total             Float
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentIntentId   String?       // Stripe payment intent ID
+  notes             String?
+  estimatedDeliveryTime DateTime?
+  confirmedAt       DateTime?
+  preparedAt        DateTime?
+  pickedUpAt        DateTime?
+  deliveredAt       DateTime?
+  cancelledAt       DateTime?
+  cancellationReason String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  customer   User        @relation(fields: [customerId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  driver     User?       @relation("DeliveryDriver", fields: [driverId], references: [id])
+  address    Address     @relation(fields: [addressId], references: [id])
+  items      OrderItem[]
+  review     Review?
+
+  @@map("orders")
+}
+
+// Order Items Table
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  price      Float  // Price at time of order
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// Reviews Table
+model Review {
+  id           String   @id @default(cuid())
+  userId       String
+  restaurantId String?
+  menuItemId   String?
+  orderId      String?  @unique
+  rating       Int      // 1-5 stars
+  comment      String?
+  images       String[] // Array of image URLs
+  isAnonymous  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id])
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+  menuItem   MenuItem?   @relation(fields: [menuItemId], references: [id])
+  order      Order?      @relation(fields: [orderId], references: [id])
+
+  @@map("reviews")
+}
+
+// Notifications Table
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  titleAr   String?  // Arabic title
+  message   String
+  messageAr String?  // Arabic message
+  type      String   // ORDER_UPDATE, PROMOTION, SYSTEM, etc.
+  data      String?  // JSON data for the notification
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Coupons Table (for future use)
+model Coupon {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  title            String
+  description      String?
+  discountType     String   // PERCENTAGE, FIXED_AMOUNT
+  discountValue    Float
+  minimumOrder     Float    @default(0)
+  maxDiscount      Float?   // For percentage discounts
+  usageLimit       Int?     // Total usage limit
+  usageCount       Int      @default(0)
+  userUsageLimit   Int      @default(1) // Per user limit
+  isActive         Boolean  @default(true)
+  validFrom        DateTime
+  validUntil       DateTime
+  applicableToAll  Boolean  @default(true)
+  restaurantIds    String[] // JSON array of restaurant IDs
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("coupons")
+}
+
+// System Settings Table
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("STRING") // STRING, NUMBER, BOOLEAN, JSON
+  category  String   @default("GENERAL")
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
